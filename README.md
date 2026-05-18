@@ -10,6 +10,15 @@
 
 ## Installation
 
+### Use your coding agent
+
+Use your coding agent with this instruction so it can install the Judgment
+skill and apply it to your task.
+
+```txt
+Install the Judgment skill from github.com/JudgmentLabs/skills.
+```
+
 ### skills CLI
 
 Install via the skills CLI:
