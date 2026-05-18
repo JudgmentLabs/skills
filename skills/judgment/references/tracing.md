@@ -55,8 +55,7 @@ Use these best practices to decide what to implement and which docs to fetch.
 | Simple span types           | Always                                                           | https://docs.judgmentlabs.ai/sdk-reference/python/trace/tracer                               | Keeps traces easy to scan and filter                                  |
 | Session context             | App has conversations or multi-turn workflows                    | https://docs.judgmentlabs.ai/documentation/performance/tracing#grouping-traces-into-sessions | Groups related traces into sessions for conversation-level debugging  |
 | Customer context            | App has customers, tenants, workspaces, or customer users        | https://docs.judgmentlabs.ai/sdk-reference/python/trace/tracer#set_customer_id               | Attributes traces to affected customers for customer-level debugging  |
-| Sensitive data policy       | Always                                                           | https://docs.judgmentlabs.ai/documentation/performance/tracing#manual-attribute-setting      | Prevents data leakage                                                 |
-| Useful root input/output    | Always                                                           | https://docs.judgmentlabs.ai/documentation/performance/tracing#manual-attribute-setting      | Makes traces readable in the UI                                       |
+| Setting your own attributes | Always                                                           | https://docs.judgmentlabs.ai/documentation/performance/tracing#manual-attribute-setting      | Makes traces readable in the UI                                       |
 | Export lifecycle            | Scripts, CLIs, jobs, tests, and servers                          | https://docs.judgmentlabs.ai/sdk-reference/typescript/tracer                                 | Prevents missing traces in short-lived runs and broken server tracing |
 
 Framework and provider integrations handle model name, token usage, and span
@@ -79,7 +78,7 @@ Only apply these when the project architecture calls for them:
 | Tracer across project semantics     | Tracing spans multiple files or modules                                        | https://docs.judgmentlabs.ai/sdk-reference/python/trace/tracer                     | Preserves one coherent trace across the codebase                          |
 | Active tracers with project names   | Multiple Judgment projects are needed                                          | https://docs.judgmentlabs.ai/documentation/performance/tracing#project-routing     | Keeps staging, prod, or customer traces in the right place                |
 | Distributed tracing                 | Requests cross stateless service, worker, queue, serverless, or RPC boundaries | https://docs.judgmentlabs.ai/documentation/performance/tracing#distributed-tracing | Keeps downstream spans connected when in-memory context cannot carry over |
-| Agent subtracing with linked traces | Agents delegate to subagents or subsystems                                     | https://docs.judgmentlabs.ai/sdk-reference/python/trace/tracer#start_linked_trace  | Makes complex delegation inspectable without flattening everything        |
+| Agent subtracing with linked traces | Agents delegate to subagent                                     | https://docs.judgmentlabs.ai/sdk-reference/python/trace/tracer#start_linked_trace  | Splits subagents into their own traces for independent evaluation        |
 
 ### 3. Explore Traces First
 
