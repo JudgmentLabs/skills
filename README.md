@@ -41,6 +41,7 @@ export JUDGMENT_ORG_ID=...
 Once installed, your agent can use this skill when you ask it to:
 
 - Add Judgment tracing to an agent or workflow
+- Test model, prompt, tool, or agent config changes with OfflineTracer before production
 - Evaluate agent outputs with Judgment
 - Create or debug Python code judges
 - Choose scorer patterns for offline and hosted evaluations
