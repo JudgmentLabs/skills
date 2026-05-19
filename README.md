@@ -10,18 +10,47 @@
 
 ## Installation
 
-### Use your coding agent
+### Cursor
 
-Use your coding agent with this instruction so it can install the Judgment
-skill and apply it to your task.
-
-```txt
-Install the Judgment skill from github.com/JudgmentLabs/skills.
+```bash
+npx skills add JudgmentLabs/skills --skill "judgment" --agent cursor
 ```
 
-### skills CLI
+Or install manually:
 
-Install via the skills CLI:
+```bash
+mkdir -p .cursor/skills/judgment
+curl -fsSL https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgment/SKILL.md \
+  -o .cursor/skills/judgment/SKILL.md
+```
+
+### Claude Code
+
+```bash
+npx skills add JudgmentLabs/skills --skill "judgment" --agent claude-code
+```
+
+Or install manually:
+
+```bash
+mkdir -p .claude/skills/judgment
+curl -fsSL https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgment/SKILL.md \
+  -o .claude/skills/judgment/SKILL.md
+```
+
+### Windsurf
+
+```bash
+npx skills add JudgmentLabs/skills --skill "judgment" --agent windsurf
+```
+
+### Codex
+
+```bash
+npx skills add JudgmentLabs/skills --skill "judgment" --agent codex
+```
+
+### Other agents
 
 ```bash
 npx skills add JudgmentLabs/skills --skill "judgment"
