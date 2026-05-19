@@ -12,30 +12,31 @@
 
 ### Cursor
 
+Install as a [Cursor plugin](https://cursor.com/docs/plugins):
+
+```
+/add-plugin judgment
+```
+
+Or via the skills CLI:
+
 ```bash
 npx skills add JudgmentLabs/skills --skill "judgment" --agent cursor
 ```
 
-Or install manually:
+### Claude Code
+
+Add the marketplace and install:
 
 ```bash
-mkdir -p .cursor/skills/judgment
-curl -fsSL https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgment/SKILL.md \
-  -o .cursor/skills/judgment/SKILL.md
+claude plugin marketplace add JudgmentLabs/skills
+claude plugin install judgment@judgment-skills
 ```
 
-### Claude Code
+Or via the skills CLI:
 
 ```bash
 npx skills add JudgmentLabs/skills --skill "judgment" --agent claude-code
-```
-
-Or install manually:
-
-```bash
-mkdir -p .claude/skills/judgment
-curl -fsSL https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgment/SKILL.md \
-  -o .claude/skills/judgment/SKILL.md
 ```
 
 ### Windsurf
