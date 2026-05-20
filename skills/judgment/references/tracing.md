@@ -79,7 +79,7 @@ These are SDK-level behaviors the agent must respect when writing code. They're 
   - Python: OpenAI, Anthropic, Together AI, Google GenAI.
   - TypeScript: OpenAI only. For any other TS provider, use `Tracer.registerOTELInstrumentation(<instrumentor>)` instead.
 
-- **`Tracer.wrap()` owns these attributes.** Do not set `gen_ai.prompt`, `gen_ai.completion`, `judgment.llm.model`, `judgment.llm.provider`, or any `judgment.usage.*` key by hand when the call is wrapped — the wrapper already populates them.
+- **`Tracer.wrap()` owns these attributes.** Do not set `gen_ai.prompt`, `gen_ai.completion`, `judgment.llm.model`, or any `judgment.usage.*` key by hand when the call is wrapped — the wrapper already populates them.
 
 - **For custom LLM calls (in-house models, raw HTTP, providers not covered by `wrap()` or a framework integration), call `Tracer.recordLLMMetadata({...})` inside the span.** Both Python and TypeScript take an object with **snake_case** keys: `provider`, `model`, `non_cached_input_tokens`, `output_tokens`, `total_cost_usd`. This populates `judgment.llm.*` and `judgment.usage.*` so cost analytics work.
 
@@ -335,7 +335,7 @@ https://docs.judgmentlabs.ai/documentation/performance/tracing#distributed-traci
 | Not explicitly setting input/output            | Trace input may be noisy or sensitive            | Set only relevant input/output for the root span                      |
 | Manual instrumentation when integration exists | More code, less context                          | Use the matching framework or provider integration                    |
 | Double-instrumenting the same model call       | Duplicate spans and confusing costs              | Use one instrumentation path per model call                           |
-| Setting `gen_ai.*` / `judgment.llm.*` / `judgment.usage.*` manually when `wrap()` is in use | Double-writing causes conflicting values         | Let `wrap()` populate; only use `recordLLMMetadata` for un-wrapped calls |
+| Setting `gen_ai.*` / `judgment.usage.*` manually when `wrap()` is in use | Double-writing causes conflicting values         | Let `wrap()` populate; only use `recordLLMMetadata` for un-wrapped calls |
 | Initializing tracing in every module/request   | Duplicate setup and export issues                | Initialize once in startup/bootstrap code                             |
 | Missing `session_id` for chat apps             | Conversations do not group in Sessions           | Set `session_id` on each root trace in the conversation               |
 | Stamping `judgment.session_id` / `judgment.customer_id` via `set_attribute(s)` | Descendant spans don't inherit the value — sessions/customer filtering breaks | Use `set_session_id` / `set_customer_id` helpers, which write to baggage |
