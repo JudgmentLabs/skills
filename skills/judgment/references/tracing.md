@@ -41,7 +41,57 @@ require less code than manual instrumentation.
 **No matching integration:** Initialize tracing once, then manually observe the
 root request or agent function plus high-signal tool, retrieval, and LLM calls.
 
-### 2. Apply Tracing Best Practices
+### 2. Confirm Orchestration and Plan
+
+Before writing any tracing code, gather the project's instrumentation shape and confirm a plan with the user. Do not skip this gate — even when the user is terse.
+
+#### Ask what code inspection can't tell you
+
+If any of these are not obvious from Step 1, ask. If they are obvious, state your inference back to the user for confirmation in one line.
+
+- **Orchestration structure**: single function, sequential pipeline, hierarchical delegating sub-agents, or graph / state-machine?
+- **Run shape**: one-shot, multi-turn conversation, or loop-until-completion?
+- **Identity sources**: where do `session_id`, `customer_id`, and (optionally) `customer_user_id` come from?
+
+#### Show the plan and wait for approval
+
+Reply with this exact structure before any file edits:
+
+```
+Plan:
+- Integration:    <Tracer.wrap | OTEL instrumentor name | framework integration>
+- Entrypoint:     <file:line where Tracer.init will land>
+- Span shape:     <functions to @observe + their span_type>
+- Identity:       <where set_session_id / set_customer_id will be called>
+- Sub-agents:     <which calls use fork=True, or "none">
+- I/O capture:    <any record_input=False / record_output=False, with reason>
+```
+
+Then ask: **"Approve this plan, or tell me what to change?"** and wait.
+
+---
+
+#### SDK Guardrails
+
+These are SDK-level behaviors the agent must respect when writing code. They're not workflow choices — they're correctness rules.
+
+- **`Tracer.wrap()` provider coverage.**
+  - Python: OpenAI, Anthropic, Together AI, Google GenAI.
+  - TypeScript: OpenAI only. For any other TS provider, use `Tracer.registerOTELInstrumentation(<instrumentor>)` instead.
+
+- **`Tracer.wrap()` owns these attributes.** Do not set `gen_ai.prompt`, `gen_ai.completion`, `judgment.llm.model`, `judgment.llm.provider`, or any `judgment.usage.*` key by hand when the call is wrapped — the wrapper already populates them.
+
+- **For custom LLM calls (in-house models, raw HTTP, providers not covered by `wrap()` or a framework integration), call `Tracer.recordLLMMetadata({...})` inside the span.** Both Python and TypeScript take an object with **snake_case** keys: `provider`, `model`, `non_cached_input_tokens`, `output_tokens`, `total_cost_usd`. This populates `judgment.llm.*` and `judgment.usage.*` so cost analytics work.
+
+- **Identity helpers vs. `set_attribute`.** `Tracer.set_session_id` / `set_customer_id` / `set_customer_user_id` (camelCase in TS) write to OpenTelemetry baggage, so descendant spans inherit the value — including spans inside `fork=True` linked traces. Writing `judgment.session_id` / `judgment.customer_id` via `set_attribute(s)` only stamps the current span and breaks propagation. Always use the helpers.
+
+- **`fork=True` (Python) / `{ fork: true }` (TS) on `observe`** runs the function in a fresh linked trace. The SDK auto-emits `judgment.link.source_trace_id`, `target_trace_id`, `source_span_id`, `target_span_id` — do **not** set these manually. Identity baggage still propagates across the link.
+
+- **Python generators behave specially under `@Tracer.observe`.** When the wrapped function uses `yield`, the SDK overrides the wrapper's `span_type` to `"generator"` and emits a `"generator_item"` child span per yield. For hot streams (e.g., streaming LLM token output) where per-yield visibility is noise, pass `disable_generator_yield_span=True` to collapse to a single span. TypeScript's `observe` wraps Promise-returning async functions, not generators — there is no equivalent option in `ObserveOptions`.
+
+---
+
+### 3. Apply Tracing Best Practices
 
 Use these best practices to decide what to implement and which docs to fetch.
 
@@ -80,7 +130,7 @@ Only apply these when the project architecture calls for them:
 | Distributed tracing                 | Requests cross stateless service, worker, queue, serverless, or RPC boundaries | https://docs.judgmentlabs.ai/documentation/performance/tracing#distributed-tracing | Keeps downstream spans connected when in-memory context cannot carry over |
 | Agent subtracing with linked traces | Agents delegate to subagent                                     | https://docs.judgmentlabs.ai/documentation/performance/tracing#subagent-tracing    | Splits subagents into their own traces for independent evaluation        |
 
-### 3. Explore Traces First
+### 4. Explore Traces First
 
 Once baseline instrumentation is working, encourage the user to explore their
 traces in the Judgment UI before adding more context:
@@ -136,7 +186,7 @@ Inspect:
 - Does the trace input/output explain behavior without exposing secrets?
 - If this is a conversation, does the session page group the expected turns?
 
-### 4. Discover Additional Context Needs
+### 5. Discover Additional Context Needs
 
 Determine what additional instrumentation would be valuable. Infer from code
 when possible, only ask when unclear.
@@ -204,7 +254,7 @@ Implementation guidance:
   `fork=True`, or linked trace helpers before implementation.
 - Use stable internal IDs instead of raw emails or names.
 
-### 5. Guide to UI
+### 6. Guide to UI
 
 After adding context, point users to relevant UI features:
 
@@ -285,8 +335,10 @@ https://docs.judgmentlabs.ai/documentation/performance/tracing#distributed-traci
 | Not explicitly setting input/output            | Trace input may be noisy or sensitive            | Set only relevant input/output for the root span                      |
 | Manual instrumentation when integration exists | More code, less context                          | Use the matching framework or provider integration                    |
 | Double-instrumenting the same model call       | Duplicate spans and confusing costs              | Use one instrumentation path per model call                           |
+| Setting `gen_ai.*` / `judgment.llm.*` / `judgment.usage.*` manually when `wrap()` is in use | Double-writing causes conflicting values         | Let `wrap()` populate; only use `recordLLMMetadata` for un-wrapped calls |
 | Initializing tracing in every module/request   | Duplicate setup and export issues                | Initialize once in startup/bootstrap code                             |
 | Missing `session_id` for chat apps             | Conversations do not group in Sessions           | Set `session_id` on each root trace in the conversation               |
+| Stamping `judgment.session_id` / `judgment.customer_id` via `set_attribute(s)` | Descendant spans don't inherit the value — sessions/customer filtering breaks | Use `set_session_id` / `set_customer_id` helpers, which write to baggage |
 | Switching projects mid-trace                   | Spans may route incorrectly or fail to switch    | Route before the root span starts                                     |
 | Missing distributed propagation                | Downstream service appears as an unrelated trace | Inject and continue trace context across service boundaries           |
 | Guessing SDK APIs from memory                  | Outdated code or mixed SDK generations           | Fetch docs and match the installed SDK version                        |
