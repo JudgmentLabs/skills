@@ -15,6 +15,16 @@ Python/TS — Java coverage is limited; falling back to general OTel reasoning")
 and point them at the Judgment Java SDK docs at https://docs.judgmentlabs.ai
 rather than relying on the tables in this skill.
 
+**Other tracing setups — use [`ingest.md`](./ingest.md) instead:** For
+auditing existing third-party tracing instrumentation (Braintrust,
+Langfuse, LangSmith, Logfire, OpenInference, OpenLIT, raw OpenTelemetry,
+`judgeval.integrations.*` relays) where the customer keeps their
+existing provider and Judgment receives traces via the ingest pipeline,
+use [`ingest.md`](./ingest.md). This skill is for adding tracing from
+scratch or auditing existing native judgeval code. The parent
+[`SKILL.md`](../SKILL.md) routes between the two based on the
+customer's setup.
+
 ## When to Use
 
 - Setting up Judgment tracing in a new project
@@ -455,7 +465,7 @@ you're on):
 | OpenInference instrumentor | `OpenAIAgentsInstrumentor().instrument()` (or `CrewAIInstrumentor()...`)   |
 | OpenLit (Judgment bridge)  | `Openlit.initialize()` after `Tracer(...)`                                 |
 | OpenLLMetry                | Check the provider's docs — initialization style varies                    |
-| Vercel AI SDK              | Configure the OTel exporter with `service.name`; no `.instrument()` call   |
+| Vercel AI SDK              | Pass `experimental_telemetry: { isEnabled: true }` per call; see [`ingest.md`](./ingest.md) Logfire playbook for the `ai.*` vs `gen_ai.*` mapping and manual-stamping requirements |
 | LangGraph / Claude Agent SDK / Google ADK | Framework-specific — check the linked docs                  |
 
 If a project has the integration **imported but never invokes the activation
