@@ -3,6 +3,18 @@
 Instrument LLM and agent applications with Judgment tracing, following best
 practices and tailored to the user's codebase.
 
+## Scope
+
+**Primary coverage:** Python and TypeScript.
+
+**Out of scope — Java:** Java SDK guidance is **not covered** by this skill. The
+auditing heuristics below still apply in principle, but the Python/TS-specific
+APIs, env vars, and integration tables do not map 1:1 to Java. When working in a
+Java codebase, **flag this to the user explicitly** ("the tracing skill targets
+Python/TS — Java coverage is limited; falling back to general OTel reasoning")
+and point them at the Judgment Java SDK docs at https://docs.judgmentlabs.ai
+rather than relying on the tables in this skill.
+
 ## When to Use
 
 - Setting up Judgment tracing in a new project
@@ -91,7 +103,123 @@ These are SDK-level behaviors the agent must respect when writing code. They're 
 
 ---
 
-### 3. Apply Tracing Best Practices
+### 3. Audit Existing Setup
+
+When tracing already exists in the project, run this audit pass **before**
+reaching for the best-practices table. The most common breakages in real
+codebases are not "missing best practices" — they are **imported-and-forgotten,
+typo'd, or silently-discarded** setup.
+
+**1. Smoke-test imports.** For every tracing-related import (`judgeval`,
+`logfire`, `langfuse`, `langsmith`, OTel auto-instrumentors, OpenLit,
+OpenInference, Raindrop, etc.), verify the module path actually exists. Typos
+like `raindrop.analytic` (should be `analytics`) cause silent `ImportError`s
+that broad `try/except` blocks swallow.
+
+**2. Verify activation.** Every imported `Instrumentor`, `Tracer`, integration
+helper, or middleware must have a matching activation call:
+
+- OTel auto-instrumentors → `.instrument()` or `.instrument_app(app)`
+- Judgeval tracer → constructed once via `Tracer(project_name=...)`
+- Vendor integrations (OpenLit, OpenInference, Langfuse client, etc.) → check
+  the vendor's documented activation method (e.g. `Openlit.initialize()`,
+  `OpenAIAgentsInstrumentor().instrument()`)
+
+**Imported-but-uncalled is the single most common breakage.** If a symbol is
+imported and never referenced past the import, that is almost certainly the
+bug.
+
+**3. Cross-check env var names and config keys.** Compare what the code reads
+(`os.environ.get(...)`) against:
+
+- the provider's documented env vars,
+- the file's own error messages and docstrings,
+- the project's `.env.example` or README.
+
+Code/message divergence — e.g. code reads `LOGFIRE_API_TOKEN` but the error
+message says `LOGFIRE_READ_TOKEN must be set` — is a strong smoking gun.
+
+**4. Cross-check vendor-specific attribute keys.** Vendor OTel attributes
+(`langfuse.session.id`, Arize attribute keys, etc.) must follow the vendor's
+casing exactly. Writing to the wrong key is silently discarded — no error. If
+a group of constants follows a clear pattern (all dotted notation) and one
+diverges (`langfuse.sessionId`), that is the bug.
+
+**5. Compare similar blocks within and across files.** If a file has multiple
+tool functions, agent classes, or instrumented blocks, build a quick mental
+table: which providers / context managers / span names does each one have? The
+broken one is often the one that diverges from a pattern the others repeat.
+Same for sibling files — `anthropic_agent.py` and `openai_agent.py` should
+match in shape even when their LLM provider differs. Watch for:
+
+- Dangling `var = None` initializers — signal a wrapper was removed
+- Dead `.update(...)` calls on variables that never get populated
+- Async/sync variants of the same helper with different push/pop bodies
+
+**6. Audit each provider independently in multi-provider shims.** When a file
+fans out to multiple tracing backends (Judgment + Langfuse + Logfire + ...),
+each provider's setup is independent. A bug in one provider's init silently
+disables that provider for the entire app while the others keep working — the
+symptom is "traces appear in some dashboards, not others."
+
+**Audit each provider to completion** — finding a bug in one provider does
+not mean the others are clean. Multi-provider files commonly contain multiple
+independent bugs. Before declaring the audit done, tick through each provider
+yourself:
+
+- [ ] Provider A: env vars, init function call, context-manager signature, async/sync parity
+- [ ] Provider B: env vars, init function call, context-manager signature, async/sync parity
+- [ ] Provider C: env vars, init function call, context-manager signature, async/sync parity
+- [ ] ...one row per provider in the file
+
+Each provider's audit must reach a verified conclusion ("found bug X" or
+"verified clean") before you stop. Do not anchor on the first bug found.
+
+#### Auditor's discipline
+
+- **Don't invent improvements.** If you cannot point to a specific failing
+  behavior in a block, do not change it. Stylistic preferences for `span_type`
+  values, function decomposition, or attribute richness are not "fixes" — they
+  are scope creep that risks regressing the project's deliberate choices.
+- **High confidence requires evidence.** A smoking gun in the code (typo,
+  missing call, code/message divergence), a divergence from a sibling pattern,
+  or a verified trace from Judgment. Plausibility alone is not evidence.
+- **The bug is usually in the boring place.** If you find yourself reaching
+  for a sophisticated diagnosis in complex code while ignoring a simple-looking
+  neighboring block, stop and re-read the simple block. A one-character typo
+  or a missing one-line call is the most common shape of real-world tracing
+  breakage.
+- **Verify before you dismiss.** Discipline means not editing without evidence
+  — it does **not** mean refusing to gather evidence. When you spot a
+  suspicious method name, attribute access, env-var name, or import path that
+  *could* be a typo, **verify it before deciding it's not a bug**:
+  - WebFetch the provider's docs to confirm the canonical API
+  - Or run `python -c "import X; print(hasattr(X, 'Y'))"` / `print(dir(X))` to
+    introspect the installed SDK
+  - For env vars, grep the rest of the repo (`.env.example`, README, helper
+    files) for canonical usage
+
+  A 10-second verification call is the difference between "left a working
+  method alone" and "missed a real typo." If you find yourself writing
+  "plausible but lacks a smoking gun" about a divergence you noticed — that
+  is exactly the moment to go verify, not skip. Suspicious-looking method
+  names and env-var names in third-party APIs are usually verifiable with a
+  single `hasattr` / `dir` call or one doc lookup.
+
+#### Before declaring confidence "high"
+
+- Did you verify imports actually import? (no typos)
+- Did you confirm the call chain — every imported helper is invoked, and every
+  invoked helper is imported?
+- Did you compare each block against its sibling(s)?
+- Did you trace one example execution end-to-end in your head?
+- Did you (or will you) verify with a real trace in Judgment or via MCP
+  `search_traces`?
+
+If you can't answer yes to at least three of these, your confidence is
+"medium" or "low".
+
+### 4. Apply Tracing Best Practices
 
 Use these best practices to decide what to implement and which docs to fetch.
 
@@ -130,7 +258,7 @@ Only apply these when the project architecture calls for them:
 | Distributed tracing                 | Requests cross stateless service, worker, queue, serverless, or RPC boundaries | https://docs.judgmentlabs.ai/documentation/performance/tracing#distributed-tracing | Keeps downstream spans connected when in-memory context cannot carry over |
 | Agent subtracing with linked traces | Agents delegate to subagent                                     | https://docs.judgmentlabs.ai/documentation/performance/tracing#subagent-tracing    | Splits subagents into their own traces for independent evaluation        |
 
-### 4. Explore Traces First
+### 5. Explore Traces First
 
 Once baseline instrumentation is working, encourage the user to explore their
 traces in the Judgment UI before adding more context:
@@ -186,7 +314,7 @@ Inspect:
 - Does the trace input/output explain behavior without exposing secrets?
 - If this is a conversation, does the session page group the expected turns?
 
-### 5. Discover Additional Context Needs
+### 6. Discover Additional Context Needs
 
 Determine what additional instrumentation would be valuable. Infer from code
 when possible, only ask when unclear.
@@ -249,12 +377,29 @@ Implementation guidance:
   consumers, RPC calls, and separate containers. Use normal nested spans for
   functions/modules that run in the same process.
 - When distributed tracing is needed, use SDK propagation helpers. Do not
-  hand-roll trace headers unless the docs require it.
+  hand-roll trace headers unless the docs require it. **OTel auto-instrumentors
+  must be `.instrument()`-ed once at startup — importing them is not enough.**
+  Common library → instrumentor mappings (Python):
+
+  | Library/framework | Activation                                  |
+  | ----------------- | ------------------------------------------- |
+  | `requests`        | `RequestsInstrumentor().instrument()`       |
+  | `httpx`           | `HTTPXClientInstrumentor().instrument()`    |
+  | `aiohttp`         | `AioHttpClientInstrumentor().instrument()`  |
+  | `urllib3`         | `URLLib3Instrumentor().instrument()`        |
+  | FastAPI           | `FastAPIInstrumentor.instrument_app(app)`   |
+  | Flask             | `FlaskInstrumentor().instrument_app(app)`   |
+  | Django            | `DjangoInstrumentor().instrument()`         |
+
+  Server-side: if a framework instrumentor (e.g. `FastAPIInstrumentor`) is
+  installed, header extraction is automatic. Otherwise, pass the actual
+  incoming-headers mapping — `propagate.extract(request.headers)`, **not**
+  `extract({})` — when extracting context in middleware.
 - For agent subtracing, check current SDK support for `span_type="agent"`,
   `fork=True`, or linked trace helpers before implementation.
 - Use stable internal IDs instead of raw emails or names.
 
-### 6. Guide to UI
+### 7. Guide to UI
 
 After adding context, point users to relevant UI features:
 
@@ -297,6 +442,25 @@ Prefer these over manual instrumentation:
 
 Full list: https://docs.judgmentlabs.ai/documentation/integrations/introduction
 
+### Activation snippets
+
+Constructing an integration object is not the same as activating it. Use these
+canonical activation calls (verify against the linked docs for the version
+you're on):
+
+| Integration                | Canonical activation                                                       |
+| -------------------------- | -------------------------------------------------------------------------- |
+| OpenAI (provider wrap)     | `client = wrap(OpenAI())`                                                  |
+| Anthropic (provider wrap)  | `client = wrap(Anthropic())`                                               |
+| OpenInference instrumentor | `OpenAIAgentsInstrumentor().instrument()` (or `CrewAIInstrumentor()...`)   |
+| OpenLit (Judgment bridge)  | `Openlit.initialize()` after `Tracer(...)`                                 |
+| OpenLLMetry                | Check the provider's docs — initialization style varies                    |
+| Vercel AI SDK              | Configure the OTel exporter with `service.name`; no `.instrument()` call   |
+| LangGraph / Claude Agent SDK / Google ADK | Framework-specific — check the linked docs                  |
+
+If a project has the integration **imported but never invokes the activation
+call**, that is the bug. The constructor or import alone is a no-op.
+
 ## Always Explain Why
 
 When suggesting additions, explain the user benefit:
@@ -330,7 +494,7 @@ https://docs.judgmentlabs.ai/documentation/performance/tracing#distributed-traci
 | No flush/shutdown in short-lived scripts       | Traces may never be sent                         | Call the documented flush/shutdown method before exit                 |
 | Shutting down inside a server handler          | Later requests may stop tracing                  | Shutdown only on process teardown                                     |
 | Flat traces                                    | Can't see which step failed                      | Use one root span with nested spans for tools, retrieval, and LLMs    |
-| Generic trace names                            | Hard to filter                                   | Use descriptive names: `support-chat-turn`, `retrieve-documents`      |
+| Generic span/trace/project names               | Hard to filter; trace UI shows opaque rows; multiple traces collapse into one bucket | **Treat as a fix-worthy bug, not polish.** Anti-examples: `generation`, `tool`, `run`, `step`, `chain`, `default`. Good patterns: `{agent_name}/{operation}`, `{feature}-{action}`, `tool/{function_name}`. If sibling functions/files use descriptive names and one is generic, the generic one is the bug. Same rule applies to `project_name`, `session_id`, customer identifiers, and any other field used for downstream filtering. **Also a hard authoring rule:** when you add or restore a span/wrapper, never name it `generation`, `tool`, `run`, etc. Use the descriptive pattern from the moment you write it — e.g. `f"{self.name}/messages-create"`, `tool/web_search`. Generic names are bugs whether they were there before you arrived or you just introduced them. |
 | Logging sensitive data                         | Data leakage risk                                | Mask or omit PII, secrets, auth headers, and unnecessary raw payloads |
 | Not explicitly setting input/output            | Trace input may be noisy or sensitive            | Set only relevant input/output for the root span                      |
 | Manual instrumentation when integration exists | More code, less context                          | Use the matching framework or provider integration                    |
@@ -342,3 +506,11 @@ https://docs.judgmentlabs.ai/documentation/performance/tracing#distributed-traci
 | Switching projects mid-trace                   | Spans may route incorrectly or fail to switch    | Route before the root span starts                                     |
 | Missing distributed propagation                | Downstream service appears as an unrelated trace | Inject and continue trace context across service boundaries           |
 | Guessing SDK APIs from memory                  | Outdated code or mixed SDK generations           | Fetch docs and match the installed SDK version                        |
+| Imported but uncalled instrumentor/integration | Setup looks present; no spans emit               | Activate per the provider's documented call (`.instrument()`, `.instrument_app(app)`, `.initialize()`, etc.). The single most common breakage. |
+| Wrong env var name (esp. third-party providers)| Init branch never taken; silent fallback to disabled | Cross-check against provider docs **and** the file's own error messages, docstrings, `.env.example` |
+| Wrong vendor-specific attribute key            | Vendor silently ignores; sessions/traces don't group as intended | Look up the exact key (`langfuse.session.id`, not `langfuse.sessionId`); compare against sibling constants in the same file |
+| Provider parity broken in fan-out              | One block fans out to N providers, another to N-1; some dashboards show partial traces | In multi-provider files, every traced block should wrap with the same set of providers; restore the missing wrapper |
+| Dangling `var = None` or dead `.update(...)`   | A wrapper was removed but its variable references remained | Treat as a "wrapper deletion" smell; restore the wrapper to match siblings |
+| Async/sync helper drift                        | Sync helper pushes a context stack, async sibling doesn't (or vice versa) — async traces become flat | Diff the two; sync and async variants should have identical push/pop bodies |
+| `extract()` / propagation with empty carrier   | Code looks instrumented; carrier is empty; silent disconnect from upstream trace | Pass the actual incoming-headers mapping (`request.headers`), **not** `{}`, to the propagator |
+| Code/error-message divergence                  | `os.environ.get("X")` while error says `"Y must be set"`; docstring claims one thing, code does another | Whichever string is documented elsewhere (`.env.example`, README, provider docs) wins. Fix the code to match. |
