@@ -1,0 +1,25 @@
+{
+  "name": "judgment",
+  "displayName": "Judgment",
+  "version": "1.0.0",
+  "description": "Skills for working with Judgment — the continuous-improvement stack for agents. Add tracing, evaluations, code judges, and monitoring with best practices.",
+  "author": {
+    "name": "Judgment Labs",
+    "email": "support@judgmentlabs.ai"
+  },
+  "homepage": "https://judgmentlabs.ai",
+  "repository": "https://github.com/JudgmentLabs/skills",
+  "license": "MIT",
+  "keywords": [
+    "judgment",
+    "judgeval",
+    "llm",
+    "observability",
+    "tracing",
+    "evaluation",
+    "agent-judges",
+    "code-judges"
+  ],
+  "category": "developer-tools",
+  "skills": "./skills/"
+}
