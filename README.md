@@ -10,6 +10,17 @@
 
 ## Installation
 
+### Use your coding agent
+
+Use your coding agent with this instruction so it can install the Judgment
+skill and apply it to your task.
+
+```txt
+Install the Judgment skill from github.com/JudgmentLabs/skills
+and use it to add tracing to this application
+following Judgment best practices.
+```
+
 ### Cursor
 
 Install as a [Cursor plugin](https://cursor.com/docs/plugins):
@@ -39,19 +50,7 @@ Or via the skills CLI:
 npx skills add JudgmentLabs/skills --skill "judgment" --agent claude-code
 ```
 
-### Windsurf
-
-```bash
-npx skills add JudgmentLabs/skills --skill "judgment" --agent windsurf
-```
-
-### Codex
-
-```bash
-npx skills add JudgmentLabs/skills --skill "judgment" --agent codex
-```
-
-### Other agents
+### Install with npx
 
 ```bash
 npx skills add JudgmentLabs/skills --skill "judgment"
