@@ -1,6 +1,6 @@
 ---
 name: judgment
-description: Use Judgment for agent tracing, evaluations, code judges, datasets, and monitoring. Use when integrating Judgment or judgeval, adding tracing to agents/workflows, creating evaluations or scorers, debugging traces, or looking up Judgment SDK usage and docs.
+description: Use Judgment for agent tracing, evaluations, code judges, datasets, monitoring, MCP server workflows, and production data analysis. Use when integrating Judgment or judgeval, adding tracing to agents/workflows, creating evaluations or scorers, debugging traces, querying Judgment MCP data, or looking up Judgment SDK usage and docs.
 allowed-tools:
   - WebFetch(domain:docs.judgmentlabs.ai)
   - Bash(curl *docs.judgmentlabs.ai/*)
@@ -16,7 +16,7 @@ Follow these principles for all Judgment work:
 
 1. **Docs first**: Fetch current Judgment docs and refer to reference files before implementing SDK patterns from memory.
 2. **Instrument the real path**: Add tracing to the functions, tools, and LLM calls the app actually executes.
-3. **Tracing first for integrations**: When the user asks to add Judgment to an app, start with [references/tracing.md](references/tracing.md) unless they explicitly ask for evaluations or code judges.
+3. **Tracing first for integrations**: When the user asks to add Judgment to an app, start with [references/tracing.md](references/tracing.md) unless they explicitly ask for evaluations, code judges, or MCP server workflows.
 4. **Stay on the tracer surface**: In most cases, use Judgment's tracer, wrappers, and documented integrations directly. Do not reach into underlying provider objects or create additional wrapper layers unless the current docs require it or a real instrumentation gap remains after using the supported integration.
 5. **Start small**: For evaluations, begin with a focused example set and one scorer before expanding.
 6. **Use the right scorer**: Use prompt/hosted scorers for rubric-based judgment and Python code judges for deterministic logic, custom dependencies, or trace inspection.
@@ -29,4 +29,5 @@ Follow these principles for all Judgment work:
 - Creating evaluations and choosing scorers: [references/evaluations.md](references/evaluations.md)
 - Testing agent changes with OfflineTracer: [references/agent-testing.md](references/agent-testing.md)
 - Creating Python code judges: [references/code-judges.md](references/code-judges.md)
+- Using the Judgment MCP server: [references/mcp-server.md](references/mcp-server.md)
 - Using Judgment docs and SDK references: [references/docs.md](references/docs.md)
