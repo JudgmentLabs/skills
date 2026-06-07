@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "judgment-skills",
+  "version": "1.0.0",
+  "description": "Judgment skills for agent tracing, evaluations, code judges, and monitoring",
+  "owner": {
+    "name": "Judgment Labs",
+    "email": "support@judgmentlabs.ai"
+  },
+  "plugins": [
+    {
+      "name": "judgment",
+      "description": "Main skill for adding Judgment tracing and evaluations, choosing scorer patterns, using code judges, and following Judgment SDK best practices.",
+      "version": "1.0.0",
+      "source": "./",
+      "category": "developer-tools"
+    }
+  ]
+}
