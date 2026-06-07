@@ -1,6 +1,6 @@
 {
   "name": "judgment",
-  "description": "Skills for working with Judgment — the continuous-improvement stack for agents. Add tracing, evaluations, code judges, and monitoring with best practices.",
+  "description": "Skills for working with Judgment — the continuous-improvement stack for agents. Add tracing, evaluations, code judges, MCP server workflows, and monitoring with best practices.",
   "version": "1.0.0",
   "author": {
     "name": "Judgment Labs",
@@ -17,6 +17,7 @@
     "tracing",
     "evaluation",
     "agent-judges",
-    "code-judges"
+    "code-judges",
+    "mcp"
   ]
 }
