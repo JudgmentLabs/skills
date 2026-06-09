@@ -30,7 +30,7 @@ Install the mcp-server-best-practices skill from github.com/JudgmentLabs/skills.
 
 ### Cursor
 
-Install as a [Cursor plugin](https://cursor.com/docs/plugins):
+Install from the [Cursor Directory](https://cursor.directory/plugins/judgment):
 
 ```
 /add-plugin judgment
