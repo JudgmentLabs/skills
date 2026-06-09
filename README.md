@@ -23,7 +23,7 @@ following Judgment best practices.
 
 ### Cursor
 
-Install as a [Cursor plugin](https://cursor.com/docs/plugins):
+Install from the [Cursor Directory](https://cursor.directory/plugins/judgment):
 
 ```
 /add-plugin judgment
