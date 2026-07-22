@@ -78,6 +78,15 @@ npx skills add JudgmentLabs/skills --skill "mcp-server-best-practices"
 npx skills add JudgmentLabs/skills --skill "judgeval-jql"
 ```
 
+## Direct Judgeval JQL references
+
+Agents that cannot install a skill can fetch the public files directly:
+
+- [Concise workflow](https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgeval-jql/SKILL.md)
+- [Python reference](https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgeval-jql/references/python.md)
+- [TypeScript reference](https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgeval-jql/references/typescript.md)
+- [Complete one-fetch bundle](https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgeval-jql/full.md)
+
 ## Prerequisites
 
 Set your Judgment credentials before asking an agent to run traces or evaluations:
