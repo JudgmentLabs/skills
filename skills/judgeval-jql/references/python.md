@@ -1,0 +1,258 @@
+# Judgeval JQL for Python
+
+This reference matches the public Python SDK JQL surface. Use the first published `judgeval` version that includes `judgeval.jql`.
+
+## Install and configure
+
+```bash
+uv add judgeval
+# or
+pip install judgeval
+```
+
+Set `JUDGMENT_API_KEY` and `JUDGMENT_ORG_ID` in the environment, then select the project through the client:
+
+```python
+from judgeval import Judgeval
+
+client = Judgeval(project_name="my-project")
+```
+
+Do not add organization or project identifiers to query JSON.
+
+## First query
+
+```python
+from judgeval import Judgeval
+from judgeval.jql import eq, traces
+
+client = Judgeval(project_name="my-project")
+query = traces().where(eq("session", "session-123")).ids()
+result = client.query(query)
+```
+
+`query.to_json()` returns this canonical JSON:
+
+```json
+{"op":"query","source":"traces","filter":{"op":"eq","field":"session","value":"session-123"},"select":{"op":"ids"}}
+```
+
+## Query roots and time bounds
+
+<!-- jql:generated:roots -->
+| source | builder | canonical JSON source |
+|---|---|---|
+| traces | `traces(filter=None)` | `traces` |
+| spans | `spans(filter=None)` | `spans` |
+| sessions | `sessions(filter=None)` | `sessions` |
+<!-- /jql:generated:roots -->
+
+Add `.last("7d")`, `.since("2026-01-01T00:00:00Z")`, or `.between(start, end)` before a terminal or `.pipe()`.
+
+## Filters and expressions
+
+Import builders from `judgeval.jql`. Python reserves several canonical operation words, so use `all_`, `any_`, and `not_`. Other snake-case spellings include `cited_by`, `agg_expr`, and `any_span`.
+
+<!-- jql:generated:operations -->
+| builder | JSON `op` | purpose | signature |
+|---|---|---|---|
+| `status` | `status` | trace/span status | `status(value)` |
+| `name` | `name` | span name — span grain | `name(value)` |
+| `model` | `model` | LLM model name — span grain | `model(value)` |
+| `cost` | `cost` | span cost — span grain | `cost(gt=?, gte=?, lt=?, lte=?)` |
+| `duration` | `duration` | duration in nanoseconds | `duration(gt=?, gte=?, lt=?, lte=?)` |
+| `judge` | `judge` | judge scores attached to traces or spans | `judge(name, value=None)` |
+| `judged` | `judged` | configured judge results | `judged(*, name=?, value=?, prompt=?, type=?, mode=?)` |
+| `attr` | `attr` | structured attributes | `attr(key, value=None, selector=None)` |
+| `grep` | `grep` | substring search | `grep(field, value)` |
+| `rg` | `rg` | regex search | `rg(field, pattern, *, ignore_case=None)` |
+| `tokens` | `tokens` | fast whole-word content search | `tokens(field, words)` |
+| `eq` | `eq` | compare any valid grain field with a literal | `eq(field, value)` |
+| `ne` | `ne` | compare any valid grain field with a literal | `ne(field, value)` |
+| `gt` | `gt` | compare any valid grain field with a literal | `gt(field, value)` |
+| `gte` | `gte` | compare any valid grain field with a literal | `gte(field, value)` |
+| `lt` | `lt` | compare any valid grain field with a literal | `lt(field, value)` |
+| `lte` | `lte` | compare any valid grain field with a literal | `lte(field, value)` |
+| `cited_by` | `cited_by` | spans cited as evidence by a judge | `cited_by(judge, value=None)` |
+| `all_` | `all` | every filter matches (AND) | `all_(first, *rest)` |
+| `any_` | `any` | at least one filter matches (OR) | `any_(first, *rest)` |
+| `not_` | `not` | the filter does not match (NOT) | `not_(filter)` |
+| `any_span` | `any_span` | at least one child span matches | `any_span(filter)` |
+| `every_span` | `every_span` | every child span matches | `every_span(filter)` |
+| `no_span` | `no_span` | no child span matches | `no_span(filter)` |
+| `any_trace` | `any_trace` | at least one trace in the session matches | `any_trace(filter)` |
+| `every_trace` | `every_trace` | every trace in the session matches | `every_trace(filter)` |
+| `no_trace` | `no_trace` | no trace in the session matches | `no_trace(filter)` |
+| `descendant_of` | `descendant_of` | spans below a matching span in the trace tree | `descendant_of(filter, depth=1)` |
+| `ancestor_of` | `ancestor_of` | spans above a matching span in the trace tree | `ancestor_of(filter, depth=1)` |
+| `over_spans` | `over_spans` | an aggregate over a row's child spans meets a threshold | `over_spans(agg, cmp, value, where=None)` |
+| `over_traces` | `over_traces` | an aggregate over a session's traces meets a threshold | `over_traces(agg, cmp, value, where=None)` |
+| `over_scores` | `over_scores` | an aggregate over a row's judge scores meets a threshold (no where) | `over_scores(agg, cmp, value)` |
+| `at_least` | `at_least` | at least k related rows match — between any_ (k=1) and every_ | `at_least(k, of, where=None)` |
+| `col` | `col` | a column reference operand | `col(name)` |
+| `agg_expr` | `agg_expr` | an aggregate expression; `per` makes it a per-group window, `where` a conditional aggregate | `agg_expr(func, field=None, *, q=?, per=?, where=?)` |
+| `arith` | `arith` | arithmetic over expressions | `arith(fn, left, right)` |
+| `bucket` | `bucket` | time-bucket key for summarize (outputs column `bucket`) | `bucket(field, every)` |
+<!-- /jql:generated:operations -->
+
+## Select terminals
+
+Call exactly one select terminal. `.rows()` accepts explicit fields and an optional per-query limit.
+
+<!-- jql:generated:terminals -->
+| JSON `op` | purpose | public SDK signature |
+|---|---|---|
+| `rows` | rows with optional explicit fields and limit | `.rows(*, fields=None, limit=None)` |
+| `ids` | matching IDs — cap with the request-level `limit` option | `.ids()` |
+| `count` | a total or counts grouped by one field | `.count(by=None)` |
+| `recent` | the n most recent rows | `.recent(n)` |
+| `top` | the n largest rows by a numeric field | `.top(n, by)` |
+| `ranked` | positional rows globally or within a field | `.ranked(*, by=?, pick=?, within=?)` |
+| `agg` | one scalar aggregate value; quantile also requires q | `.agg(func, field, q=None)` |
+| `trend` | time buckets for count or rate | `.trend(*, metric=None, bucket=None)` |
+<!-- /jql:generated:terminals -->
+
+Example:
+
+```python
+from judgeval.jql import all_, eq, spans, status
+
+result = client.query(
+    spans()
+    .where(all_(status("error"), eq("model", "gpt-4.1")))
+    .last("7d")
+    .rows(fields=["span_id", "span_name", "model", "cost"], limit=100)
+)
+```
+
+## Pipeline stages
+
+Call `.pipe()` instead of a select terminal. Pipeline stages execute in call order.
+
+<!-- jql:generated:stages -->
+| JSON `op` | purpose | public SDK signature |
+|---|---|---|
+| `where` | keep rows passing a comparison (after summarize: HAVING) | `.where(filter)` |
+| `pick` | keep the first/last n rows per group (adds rank column `_rn`) | `.pick(*, by=?, n=?, per=?, reverse=?)` |
+| `derive` | add computed columns to every row (rows unchanged) | `.derive(cols)` |
+| `summarize` | collapse to one row per group with computed aggregates (grain change) | `.summarize(aggs, *, by=None)` |
+| `sort` | order the rows | `.sort(by)` |
+| `take` | keep the first n rows (after sort), optionally skipping offset rows | `.take(n, offset=None)` |
+<!-- /jql:generated:stages -->
+
+```python
+from judgeval.jql import agg_expr, spans
+
+query = (
+    spans()
+    .last("7d")
+    .pipe()
+    .summarize({"total_cost": agg_expr("sum", "cost")}, by="model")
+    .sort("total_cost desc")
+    .take(10)
+)
+result = client.query(query)
+```
+
+## Tables and charts
+
+Presentation terminals use canonical snake-case option names and are executed with `client.present(...)`.
+
+<!-- jql:generated:presentations -->
+| JSON `op` | purpose | public SDK signature |
+|---|---|---|
+| `chart` | chart-ready rows with explicit axes and a bounded chart type | `.chart(*, chart_type, title, x_axis, y_axis, series_by=?, description=?)` |
+| `table` | table-ready rows projected to an explicit ordered column list | `.table(*, title, columns, description=None)` |
+<!-- /jql:generated:presentations -->
+
+```python
+from judgeval.jql import agg_expr, spans
+
+summary = (
+    spans()
+    .last("7d")
+    .pipe()
+    .summarize({"total_cost": agg_expr("sum", "cost")}, by="model")
+    .sort("total_cost desc")
+    .take(10)
+)
+
+table_result = client.present(
+    summary.table(
+        title="Cost by model",
+        columns=[{"key": "model"}, {"key": "total_cost"}],
+    )
+)
+
+chart_result = client.present(
+    summary.chart(
+        chart_type="bar",
+        title="Cost by model",
+        x_axis={"key": "model"},
+        y_axis={"key": "total_cost"},
+    )
+)
+```
+
+## Discovery
+
+Only use these generated `DiscoveryKind` values:
+
+<!-- jql:generated:discovery -->
+| kind | returns | options |
+|---|---|---|
+| `judges` | current judge names/config | `history`, `limit` |
+| `behaviors` | behavior names/values | `history`, `limit` |
+| `span_names` | span names seen in facts | `time`, `limit` |
+| `models` | model names seen in facts | `time`, `limit` |
+| `fields` | standard fields usable for filters, groups, and aggregates | `source` (required), `limit` |
+| `citations` | spans cited by a judge decision | `judge`, `value`, `time`, `limit` |
+| `rules` | rule configs | `limit` |
+| `judge_prompts` | judge prompt configs | `limit` |
+| `judge_config` | judge configuration | `limit` |
+<!-- /jql:generated:discovery -->
+
+```python
+fields = client.discover("fields", source="traces")
+models = client.discover("models", time={"last": "7d"}, limit=100)
+judges = client.discover("judges", limit=100)
+```
+
+## Responses and errors
+
+`client.query(...)` and `client.discover(...)` return `JqlQueryResponse` with exactly:
+
+- `query_id: str`
+- `rows: list[dict[str, Any]] | None`
+- `row_count: int | None`
+- `elapsed_ms: float`
+
+These typed responses are mappings: access fields as `result["rows"]`, not as attributes.
+
+`client.present(...)` returns `JqlPresentationResponse` with exactly:
+
+- `query_id: str`
+- `presentation: Any`
+- `frame: Any | None`
+- `elapsed_ms: float`
+
+Errors use `JudgmentAPIError` from `judgeval.exceptions`. Its public structured attributes include `status_code`, `code`, `hint`, and `retry_after_seconds`.
+
+```python
+import time
+
+from judgeval.exceptions import JudgmentAPIError
+
+try:
+    result = client.query(query)
+except JudgmentAPIError as error:
+    if error.retry_after_seconds is not None:
+        time.sleep(error.retry_after_seconds)
+        result = client.query(query)
+    else:
+        raise RuntimeError(
+            f"JQL request failed: code={error.code!r}; hint={error.hint!r}"
+        ) from error
+```
+
+Retry only when that behavior is appropriate for the application. Do not assume a retry-after value exists or match undocumented error-code strings.

@@ -4,10 +4,11 @@
 
 ## Skills
 
-| Skill                         | Description                                                                                                                                     |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| [judgment](./skills/judgment) | Main skill for adding Judgment tracing and evaluations, choosing scorer patterns, using code judges, and following Judgment SDK best practices. |
+| Skill                                                           | Description                                                                                                                                       |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [judgment](./skills/judgment)                                   | Main skill for adding Judgment tracing and evaluations, choosing scorer patterns, using code judges, and following Judgment SDK best practices.   |
 | [mcp-server-best-practices](./skills/mcp-server-best-practices) | Standalone skill for using the Judgment MCP server effectively, including full-text trace search, batched queries, and production data workflows. |
+| [judgeval-jql](./skills/judgeval-jql)                           | Build and execute tenant-safe JQL through the public Judgeval Python or TypeScript SDK.                                                           |
 
 ## Installation
 
@@ -28,6 +29,14 @@ For MCP-specific workflows:
 Install the mcp-server-best-practices skill from github.com/JudgmentLabs/skills.
 ```
 
+For public Judgeval JQL:
+
+```txt
+Install the judgeval-jql skill from github.com/JudgmentLabs/skills.
+Detect whether this project uses Judgeval Python or TypeScript, then use the
+matching public SDK to build tenant-safe JQL for: <request>.
+```
+
 ### Cursor
 
 Install as a [Cursor plugin](https://cursor.com/docs/plugins):
@@ -41,6 +50,7 @@ Or via the skills CLI:
 ```bash
 npx skills add JudgmentLabs/skills --skill "judgment" --agent cursor
 npx skills add JudgmentLabs/skills --skill "mcp-server-best-practices" --agent cursor
+npx skills add JudgmentLabs/skills --skill "judgeval-jql" --agent cursor
 ```
 
 ### Claude Code
@@ -57,6 +67,7 @@ Or via the skills CLI:
 ```bash
 npx skills add JudgmentLabs/skills --skill "judgment" --agent claude-code
 npx skills add JudgmentLabs/skills --skill "mcp-server-best-practices" --agent claude-code
+npx skills add JudgmentLabs/skills --skill "judgeval-jql" --agent claude-code
 ```
 
 ### Install with npx
@@ -64,6 +75,7 @@ npx skills add JudgmentLabs/skills --skill "mcp-server-best-practices" --agent c
 ```bash
 npx skills add JudgmentLabs/skills --skill "judgment"
 npx skills add JudgmentLabs/skills --skill "mcp-server-best-practices"
+npx skills add JudgmentLabs/skills --skill "judgeval-jql"
 ```
 
 ## Prerequisites
@@ -85,4 +97,5 @@ Once installed, your agent can use these skills when you ask it to:
 - Create or debug Python code judges
 - Choose scorer patterns for offline and hosted evaluations
 - Use the Judgment MCP server for production traces, behaviors, prompts, automations, agent memory, and agent threads
+- Query project traces, spans, and sessions with tenant-safe Judgeval JQL
 - Look up current Judgment docs and SDK reference pages
