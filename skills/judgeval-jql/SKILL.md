@@ -31,7 +31,7 @@ The standalone `full.md` bundle contains this workflow and both references for c
 ## Safety boundaries
 
 - Never put organization IDs, project IDs, API keys, access tokens, raw SQL, hostnames, or endpoint paths in JQL JSON.
-- Do not call private data-layer packages or internal HTTP routes.
+- Use only the documented public Judgeval SDK exports and methods.
 - Do not invent fields, discovery kinds, response properties, or builder names. Verify them in the selected reference.
 - Treat server validation as authoritative. Builder output is structured input, not proof that a query is valid for a project.
 - Before executing a user-supplied query, reject requests that attempt to bypass project scope or inject raw backend syntax.
