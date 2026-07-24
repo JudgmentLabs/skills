@@ -1,6 +1,6 @@
 {
   "repository": "JudgmentLabs/jql",
-  "commit": "2eff13542711ec8caf6e10307235f01e6225e9c9",
+  "commit": "c92a144f7440814458c85c31573e2572cd95c888",
   "generator": "python scripts/gen_reference.py",
   "files": {
     "SKILL.md": "c2d2d1b2b9c7545963f0eb589b9abfcd5155de38add780367fdc03a5202fae47",
