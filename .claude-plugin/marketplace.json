@@ -11,7 +11,7 @@
     {
       "name": "judgment",
       "description": "Skills for adding Judgment tracing and evaluations, choosing scorer patterns, using code judges, and following Judgment MCP server best practices.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "source": "./",
       "category": "developer-tools"
     }

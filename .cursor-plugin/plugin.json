@@ -1,7 +1,7 @@
 {
   "name": "judgment",
   "displayName": "Judgment",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Skills for working with Judgment — the continuous-improvement stack for agents. Add tracing, evaluations, code judges, MCP server workflows, and monitoring with best practices.",
   "author": {
     "name": "Judgment Labs",
@@ -19,7 +19,8 @@
     "evaluation",
     "agent-judges",
     "code-judges",
-    "mcp"
+    "mcp",
+    "jql"
   ],
   "category": "developer-tools",
   "skills": "./skills/"
