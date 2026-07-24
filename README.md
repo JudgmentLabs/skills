@@ -8,7 +8,7 @@
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [judgment](./skills/judgment)                                   | Main skill for adding Judgment tracing and evaluations, choosing scorer patterns, using code judges, and following Judgment SDK best practices.   |
 | [mcp-server-best-practices](./skills/mcp-server-best-practices) | Standalone skill for using the Judgment MCP server effectively, including full-text trace search, batched queries, and production data workflows. |
-| [judgeval-jql](./skills/judgeval-jql)                           | Build and execute tenant-safe JQL through the public Judgeval Python or TypeScript SDK.                                                           |
+| [judgeval-jql](./skills/judgeval-jql)                           | Query and analyze project traces, spans, and sessions with tenant-safe JQL, including aggregations, pipelines, presentations, and discovery.      |
 
 ## Installation
 
@@ -80,12 +80,17 @@ npx skills add JudgmentLabs/skills --skill "judgeval-jql"
 
 ## Direct Judgeval JQL references
 
-Agents that cannot install a skill can fetch the public files directly:
+Agents that cannot install a skill can fetch the stable docs-hosted files
+directly:
 
-- [Concise workflow](https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgeval-jql/SKILL.md)
-- [Python reference](https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgeval-jql/references/python.md)
-- [TypeScript reference](https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgeval-jql/references/typescript.md)
-- [Complete one-fetch bundle](https://raw.githubusercontent.com/JudgmentLabs/skills/main/skills/judgeval-jql/full.md)
+- [Concise workflow](https://docs.judgmentlabs.ai/skills/judgeval-jql/SKILL.md)
+- [Python reference](https://docs.judgmentlabs.ai/skills/judgeval-jql/references/python.md)
+- [TypeScript reference](https://docs.judgmentlabs.ai/skills/judgeval-jql/references/typescript.md)
+- [Complete one-fetch bundle](https://docs.judgmentlabs.ai/skills/judgeval-jql/full.md)
+
+The immutable JQL source commit and SHA-256 hashes for this publication are
+recorded in [`source.json`](./skills/judgeval-jql/source.json) and verified in
+CI.
 
 ## Prerequisites
 

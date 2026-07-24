@@ -1,0 +1,16 @@
+name: validate-jql-skill
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/check-jql-skill-provenance.mjs

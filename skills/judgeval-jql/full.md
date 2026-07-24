@@ -2,20 +2,18 @@
 
 # Judgeval JQL — complete agent reference
 
-# Judgeval JQL
-
 Use only the public Judgeval SDK. Builders create canonical JSON; the authenticated Judgment API validates and executes it for the configured project.
 
-## Select the runtime reference
+## Select the runtime section
 
 Inspect the repository before writing code:
 
-- For Python (`pyproject.toml`, `uv.lock`, `requirements*.txt`, or Python source), read `references/python.md` and do not read the TypeScript reference.
-- For TypeScript or JavaScript (`package.json`, `tsconfig.json`, or TS/JS source), read `references/typescript.md` and do not read the Python reference.
+- For Python (`pyproject.toml`, `uv.lock`, `requirements*.txt`, or Python source), use [Python reference](#python-reference) and do not use the TypeScript section.
+- For TypeScript or JavaScript (`package.json`, `tsconfig.json`, or TS/JS source), use [TypeScript reference](#typescript-reference) and do not use the Python section.
 - If both runtimes are present, use the runtime named by the request or the files being changed. If that is still ambiguous, ask the user which runtime to use before continuing.
 - If no runtime can be inferred, ask the user rather than guessing.
 
-The standalone `full.md` bundle contains this workflow and both references for clients that can fetch only one document. After reading it, still apply only the matching runtime section.
+This document contains both runtime references. Apply only the matching runtime section.
 
 ## Workflow
 
@@ -39,11 +37,11 @@ The standalone `full.md` bundle contains this workflow and both references for c
 
 Public JQL can be enabled per organization. If a valid public SDK request reports that the feature is unavailable, tell the user to contact Judgment; do not work around the restriction.
 
-# Python reference
+## Python reference
 
 This reference matches the public Python SDK JQL surface. Use the first published `judgeval` version that includes `judgeval.jql`.
 
-## Install and configure
+### Install and configure
 
 ```bash
 uv add judgeval
@@ -61,7 +59,7 @@ client = Judgeval(project_name="my-project")
 
 Do not add organization or project identifiers to query JSON.
 
-## First query
+### First query
 
 ```python
 from judgeval import Judgeval
@@ -78,19 +76,36 @@ result = client.query(query)
 {"op":"query","source":"traces","filter":{"op":"eq","field":"session","value":"session-123"},"select":{"op":"ids"}}
 ```
 
-## Query roots and time bounds
+### Query roots and time bounds
 
 <!-- jql:generated:roots -->
-| source | builder | canonical JSON source |
-|---|---|---|
-| traces | `traces(filter=None)` | `traces` |
-| spans | `spans(filter=None)` | `spans` |
-| sessions | `sessions(filter=None)` | `sessions` |
+| source | builder |
+|---|---|
+| traces | `traces(filter=None)` |
+| spans | `spans(filter=None)` |
+| sessions | `sessions(filter=None)` |
 <!-- /jql:generated:roots -->
 
-Add `.last("7d")`, `.since("2026-01-01T00:00:00Z")`, or `.between(start, end)` before a terminal or `.pipe()`.
+<!-- jql:generated:shared-guidance -->
+Every query begins at one root—`traces`, `spans`, or `sessions`—and keeps that grain
+until a terminal or pipeline changes the output shape.
 
-## Filters and expressions
+- Pick the grain before choosing fields. Span-only fields such as `model`, `cost`, and
+  `name` are not trace fields.
+- Supply a filter to the root or call `.where(filter)` before `.pipe()`. Root-level
+  `.where()` ANDs its filter with any filter already supplied to the root.
+- Apply one time bound with `.last(window)`, `.since(date)`, or `.between(start, end)`
+  before a terminal or `.pipe()`. Use plain `YYYY-MM-DD` values for `since` and
+  `between`; an omitted bound searches all available history.
+- Use relation quantifiers or nested builders for cross-grain questions instead of
+  pretending span fields exist on traces.
+- End a direct query with one select terminal, or call `.pipe()` and compose stages.
+  Pipeline `.where()` filters the current pipeline columns and is distinct from
+  root-level `.where()`.
+- For scalar `quantile`, `q` is required. Every other aggregate function rejects `q`.
+<!-- /jql:generated:shared-guidance -->
+
+### Filters and expressions
 
 Import builders from `judgeval.jql`. Python reserves several canonical operation words, so use `all_`, `any_`, and `not_`. Other snake-case spellings include `cited_by`, `agg_expr`, and `any_span`.
 
@@ -136,7 +151,7 @@ Import builders from `judgeval.jql`. Python reserves several canonical operation
 | `bucket` | `bucket` | time-bucket key for summarize (outputs column `bucket`) | `bucket(field, every)` |
 <!-- /jql:generated:operations -->
 
-## Select terminals
+### Select terminals
 
 Call exactly one select terminal. `.rows()` accepts explicit fields and an optional per-query limit.
 
@@ -149,7 +164,7 @@ Call exactly one select terminal. `.rows()` accepts explicit fields and an optio
 | `recent` | the n most recent rows | `.recent(n)` |
 | `top` | the n largest rows by a numeric field | `.top(n, by)` |
 | `ranked` | positional rows globally or within a field | `.ranked(*, by=?, pick=?, within=?)` |
-| `agg` | one scalar aggregate value; quantile also requires q | `.agg(func, field, q=None)` |
+| `agg` | one scalar aggregate value; q is required for quantile and rejected for every other func | `.agg(func, field, q=None)` |
 | `trend` | time buckets for count or rate | `.trend(*, metric=None, bucket=None)` |
 <!-- /jql:generated:terminals -->
 
@@ -166,7 +181,7 @@ result = client.query(
 )
 ```
 
-## Pipeline stages
+### Pipeline stages
 
 Call `.pipe()` instead of a select terminal. Pipeline stages execute in call order.
 
@@ -177,7 +192,7 @@ Call `.pipe()` instead of a select terminal. Pipeline stages execute in call ord
 | `pick` | keep the first/last n rows per group (adds rank column `_rn`) | `.pick(*, by=?, n=?, per=?, reverse=?)` |
 | `derive` | add computed columns to every row (rows unchanged) | `.derive(cols)` |
 | `summarize` | collapse to one row per group with computed aggregates (grain change) | `.summarize(aggs, *, by=None)` |
-| `sort` | order the rows | `.sort(by)` |
+| `sort` | order rows; append ` desc` for descending | `.sort(by)` |
 | `take` | keep the first n rows (after sort), optionally skipping offset rows | `.take(n, offset=None)` |
 <!-- /jql:generated:stages -->
 
@@ -195,7 +210,7 @@ query = (
 result = client.query(query)
 ```
 
-## Tables and charts
+### Tables and charts
 
 Presentation terminals use canonical snake-case option names and are executed with `client.present(...)`.
 
@@ -235,7 +250,13 @@ chart_result = client.present(
 )
 ```
 
-## Discovery
+### Discovery
+
+<!-- jql:generated:shared-discovery-guidance -->
+Names are data. Judge names, behavior values, span names, model names, and attribute keys
+must be **discovered before they are used** in substantive queries — a filter on a
+misspelled or guessed name silently matches nothing.
+<!-- /jql:generated:shared-discovery-guidance -->
 
 Only use these generated `DiscoveryKind` values:
 
@@ -259,7 +280,20 @@ models = client.discover("models", time={"last": "7d"}, limit=100)
 judges = client.discover("judges", limit=100)
 ```
 
-## Responses and errors
+### Analysis workflow
+
+<!-- jql:generated:shared-analysis-workflow -->
+Use JQL as an aggregate analysis surface, not just a trace browser.
+
+1. Discover names before filtering on them.
+2. Pick the grain: `traces`, `spans`, or `sessions`.
+3. Query aggregates first (`.count(by)`).
+4. Sample raw rows only after the aggregate shape is known (`.recent`, `.top`, `.rows`).
+5. Run a disconfirming query before answering.
+6. State the time range, filters, and coverage used in the final answer.
+<!-- /jql:generated:shared-analysis-workflow -->
+
+### Responses and errors
 
 `client.query(...)` and `client.discover(...)` return `JqlQueryResponse` with exactly:
 
@@ -298,11 +332,11 @@ except JudgmentAPIError as error:
 
 Retry only when that behavior is appropriate for the application. Do not assume a retry-after value exists or match undocumented error-code strings.
 
-# TypeScript reference
+## TypeScript reference
 
 This reference matches `judgeval@1.3.0`.
 
-## Install and configure
+### Install and configure
 
 ```bash
 npm install judgeval
@@ -321,7 +355,7 @@ const client = await Judgeval.create({ projectName: "my-project" });
 
 Do not add organization or project identifiers to query JSON.
 
-## First query
+### First query
 
 ```typescript
 import { Judgeval } from "judgeval";
@@ -338,19 +372,36 @@ const result = await client.query(query);
 {"op":"query","source":"traces","filter":{"op":"eq","field":"session","value":"session-123"},"select":{"op":"ids"}}
 ```
 
-## Query roots and time bounds
+### Query roots and time bounds
 
 <!-- jql:generated:roots -->
-| source | builder | canonical JSON source |
-|---|---|---|
-| traces | `traces(options?)` | `traces` |
-| spans | `spans(options?)` | `spans` |
-| sessions | `sessions(options?)` | `sessions` |
+| source | builder |
+|---|---|
+| traces | `traces(options?)` |
+| spans | `spans(options?)` |
+| sessions | `sessions(options?)` |
 <!-- /jql:generated:roots -->
 
-Add `.last("7d")`, `.since("2026-01-01T00:00:00Z")`, or `.between(start, end)` before a terminal or `.pipe()`.
+<!-- jql:generated:shared-guidance -->
+Every query begins at one root—`traces`, `spans`, or `sessions`—and keeps that grain
+until a terminal or pipeline changes the output shape.
 
-## Filters and expressions
+- Pick the grain before choosing fields. Span-only fields such as `model`, `cost`, and
+  `name` are not trace fields.
+- Supply a filter to the root or call `.where(filter)` before `.pipe()`. Root-level
+  `.where()` ANDs its filter with any filter already supplied to the root.
+- Apply one time bound with `.last(window)`, `.since(date)`, or `.between(start, end)`
+  before a terminal or `.pipe()`. Use plain `YYYY-MM-DD` values for `since` and
+  `between`; an omitted bound searches all available history.
+- Use relation quantifiers or nested builders for cross-grain questions instead of
+  pretending span fields exist on traces.
+- End a direct query with one select terminal, or call `.pipe()` and compose stages.
+  Pipeline `.where()` filters the current pipeline columns and is distinct from
+  root-level `.where()`.
+- For scalar `quantile`, `q` is required. Every other aggregate function rejects `q`.
+<!-- /jql:generated:shared-guidance -->
+
+### Filters and expressions
 
 Import builders from `judgeval/jql`. Method names are camelCase where the canonical JSON operation uses snake_case, such as `citedBy`, `aggExpr`, and `anySpan`.
 
@@ -396,7 +447,7 @@ Import builders from `judgeval/jql`. Method names are camelCase where the canoni
 | `bucket` | `bucket` | time-bucket key for summarize (outputs column `bucket`) | `bucket(field, every)` |
 <!-- /jql:generated:operations -->
 
-## Select terminals
+### Select terminals
 
 Call exactly one select terminal. `.rows()` accepts explicit fields and an optional per-query limit.
 
@@ -409,7 +460,7 @@ Call exactly one select terminal. `.rows()` accepts explicit fields and an optio
 | `recent` | the n most recent rows | `.recent(n)` |
 | `top` | the n largest rows by a numeric field | `.top(n, by)` |
 | `ranked` | positional rows globally or within a field | `.ranked({ by?, pick?, within? }?)` |
-| `agg` | one scalar aggregate value; quantile also requires q | `.agg({ func, field, q? })` |
+| `agg` | one scalar aggregate value; q is required for quantile and rejected for every other func | `.agg({ func, field, q? })` |
 | `trend` | time buckets for count or rate | `.trend({ metric?, bucket? }?)` |
 <!-- /jql:generated:terminals -->
 
@@ -429,7 +480,7 @@ const result = await client.query(
 );
 ```
 
-## Pipeline stages
+### Pipeline stages
 
 Call `.pipe()` instead of a select terminal. Pipeline stages execute in call order.
 
@@ -440,7 +491,7 @@ Call `.pipe()` instead of a select terminal. Pipeline stages execute in call ord
 | `pick` | keep the first/last n rows per group (adds rank column `_rn`) | `.pick({ by?, n?, per?, reverse? }?)` |
 | `derive` | add computed columns to every row (rows unchanged) | `.derive(cols)` |
 | `summarize` | collapse to one row per group with computed aggregates (grain change) | `.summarize(by, aggs) / .summarize(aggs)` |
-| `sort` | order the rows | `.sort(by)` |
+| `sort` | order rows; append ` desc` for descending | `.sort(by)` |
 | `take` | keep the first n rows (after sort), optionally skipping offset rows | `.take(n, offset?)` |
 <!-- /jql:generated:stages -->
 
@@ -459,7 +510,7 @@ const query = spans()
 const result = await client.query(query);
 ```
 
-## Tables and charts
+### Tables and charts
 
 Presentation options use canonical snake-case JSON names and are executed with `client.present(...)`.
 
@@ -499,7 +550,13 @@ const chartResult = await client.present(
 );
 ```
 
-## Discovery
+### Discovery
+
+<!-- jql:generated:shared-discovery-guidance -->
+Names are data. Judge names, behavior values, span names, model names, and attribute keys
+must be **discovered before they are used** in substantive queries — a filter on a
+misspelled or guessed name silently matches nothing.
+<!-- /jql:generated:shared-discovery-guidance -->
 
 Only use these generated `DiscoveryKind` values:
 
@@ -526,7 +583,20 @@ const models = await client.discover("models", {
 const judges = await client.discover("judges", { limit: 100 });
 ```
 
-## Responses and errors
+### Analysis workflow
+
+<!-- jql:generated:shared-analysis-workflow -->
+Use JQL as an aggregate analysis surface, not just a trace browser.
+
+1. Discover names before filtering on them.
+2. Pick the grain: `traces`, `spans`, or `sessions`.
+3. Query aggregates first (`.count(by)`).
+4. Sample raw rows only after the aggregate shape is known (`.recent`, `.top`, `.rows`).
+5. Run a disconfirming query before answering.
+6. State the time range, filters, and coverage used in the final answer.
+<!-- /jql:generated:shared-analysis-workflow -->
+
+### Responses and errors
 
 `client.query(...)` and `client.discover(...)` return `JqlQueryResponse` with exactly:
 
@@ -547,15 +617,18 @@ Errors use `JudgevalAPIError` from `judgeval`. Its public structured properties 
 ```typescript
 import { JudgevalAPIError } from "judgeval";
 
+const execute = () => client.query(query);
+let result: Awaited<ReturnType<typeof execute>>;
+
 try {
-  const result = await client.query(query);
+  result = await execute();
 } catch (error) {
   if (error instanceof JudgevalAPIError) {
-    if (error.retryAfterSeconds !== undefined) {
+    if (error.retryAfterSeconds != null) {
       await new Promise((resolve) =>
-        setTimeout(resolve, error.retryAfterSeconds! * 1000),
+        setTimeout(resolve, error.retryAfterSeconds * 1000),
       );
-      const result = await client.query(query);
+      result = await execute();
     } else {
       throw new Error(
         `JQL request failed: code=${error.code}; hint=${error.hint}`,

@@ -7,6 +7,7 @@ description: Build, inspect, or execute tenant-safe Judgment Query Language (JQL
 
 Use only the public Judgeval SDK. Builders create canonical JSON; the authenticated Judgment API validates and executes it for the configured project.
 
+<!-- jql:full:runtime-selection -->
 ## Select the runtime reference
 
 Inspect the repository before writing code:
@@ -17,6 +18,7 @@ Inspect the repository before writing code:
 - If no runtime can be inferred, ask the user rather than guessing.
 
 The standalone `full.md` bundle contains this workflow and both references for clients that can fetch only one document. After reading it, still apply only the matching runtime section.
+<!-- /jql:full:runtime-selection -->
 
 ## Workflow
 

@@ -1,0 +1,11 @@
+{
+  "repository": "JudgmentLabs/jql",
+  "commit": "2eff13542711ec8caf6e10307235f01e6225e9c9",
+  "generator": "python scripts/gen_reference.py",
+  "files": {
+    "SKILL.md": "c2d2d1b2b9c7545963f0eb589b9abfcd5155de38add780367fdc03a5202fae47",
+    "full.md": "bf61fc1d61219b507b2f068039d75932f17d1ddf73f5814c694a2daccff98ed3",
+    "references/python.md": "e902c7f6b84cb114cb0783d95bce4ad71f93f6a4d0523f3612e9a0601de797be",
+    "references/typescript.md": "1ea97bd40cb88144c088fdec2ffe45b2da32b8f0b2b0ef726aca674246ac862c"
+  }
+}

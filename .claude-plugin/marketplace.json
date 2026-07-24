@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "judgment-skills",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "Judgment skills for agent tracing, evaluations, code judges, MCP server workflows, and monitoring",
   "owner": {
     "name": "Judgment Labs",

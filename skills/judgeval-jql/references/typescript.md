@@ -41,14 +41,31 @@ const result = await client.query(query);
 ## Query roots and time bounds
 
 <!-- jql:generated:roots -->
-| source | builder | canonical JSON source |
-|---|---|---|
-| traces | `traces(options?)` | `traces` |
-| spans | `spans(options?)` | `spans` |
-| sessions | `sessions(options?)` | `sessions` |
+| source | builder |
+|---|---|
+| traces | `traces(options?)` |
+| spans | `spans(options?)` |
+| sessions | `sessions(options?)` |
 <!-- /jql:generated:roots -->
 
-Add `.last("7d")`, `.since("2026-01-01T00:00:00Z")`, or `.between(start, end)` before a terminal or `.pipe()`.
+<!-- jql:generated:shared-guidance -->
+Every query begins at one root—`traces`, `spans`, or `sessions`—and keeps that grain
+until a terminal or pipeline changes the output shape.
+
+- Pick the grain before choosing fields. Span-only fields such as `model`, `cost`, and
+  `name` are not trace fields.
+- Supply a filter to the root or call `.where(filter)` before `.pipe()`. Root-level
+  `.where()` ANDs its filter with any filter already supplied to the root.
+- Apply one time bound with `.last(window)`, `.since(date)`, or `.between(start, end)`
+  before a terminal or `.pipe()`. Use plain `YYYY-MM-DD` values for `since` and
+  `between`; an omitted bound searches all available history.
+- Use relation quantifiers or nested builders for cross-grain questions instead of
+  pretending span fields exist on traces.
+- End a direct query with one select terminal, or call `.pipe()` and compose stages.
+  Pipeline `.where()` filters the current pipeline columns and is distinct from
+  root-level `.where()`.
+- For scalar `quantile`, `q` is required. Every other aggregate function rejects `q`.
+<!-- /jql:generated:shared-guidance -->
 
 ## Filters and expressions
 
@@ -109,7 +126,7 @@ Call exactly one select terminal. `.rows()` accepts explicit fields and an optio
 | `recent` | the n most recent rows | `.recent(n)` |
 | `top` | the n largest rows by a numeric field | `.top(n, by)` |
 | `ranked` | positional rows globally or within a field | `.ranked({ by?, pick?, within? }?)` |
-| `agg` | one scalar aggregate value; quantile also requires q | `.agg({ func, field, q? })` |
+| `agg` | one scalar aggregate value; q is required for quantile and rejected for every other func | `.agg({ func, field, q? })` |
 | `trend` | time buckets for count or rate | `.trend({ metric?, bucket? }?)` |
 <!-- /jql:generated:terminals -->
 
@@ -140,7 +157,7 @@ Call `.pipe()` instead of a select terminal. Pipeline stages execute in call ord
 | `pick` | keep the first/last n rows per group (adds rank column `_rn`) | `.pick({ by?, n?, per?, reverse? }?)` |
 | `derive` | add computed columns to every row (rows unchanged) | `.derive(cols)` |
 | `summarize` | collapse to one row per group with computed aggregates (grain change) | `.summarize(by, aggs) / .summarize(aggs)` |
-| `sort` | order the rows | `.sort(by)` |
+| `sort` | order rows; append ` desc` for descending | `.sort(by)` |
 | `take` | keep the first n rows (after sort), optionally skipping offset rows | `.take(n, offset?)` |
 <!-- /jql:generated:stages -->
 
@@ -201,6 +218,12 @@ const chartResult = await client.present(
 
 ## Discovery
 
+<!-- jql:generated:shared-discovery-guidance -->
+Names are data. Judge names, behavior values, span names, model names, and attribute keys
+must be **discovered before they are used** in substantive queries — a filter on a
+misspelled or guessed name silently matches nothing.
+<!-- /jql:generated:shared-discovery-guidance -->
+
 Only use these generated `DiscoveryKind` values:
 
 <!-- jql:generated:discovery -->
@@ -226,6 +249,19 @@ const models = await client.discover("models", {
 const judges = await client.discover("judges", { limit: 100 });
 ```
 
+## Analysis workflow
+
+<!-- jql:generated:shared-analysis-workflow -->
+Use JQL as an aggregate analysis surface, not just a trace browser.
+
+1. Discover names before filtering on them.
+2. Pick the grain: `traces`, `spans`, or `sessions`.
+3. Query aggregates first (`.count(by)`).
+4. Sample raw rows only after the aggregate shape is known (`.recent`, `.top`, `.rows`).
+5. Run a disconfirming query before answering.
+6. State the time range, filters, and coverage used in the final answer.
+<!-- /jql:generated:shared-analysis-workflow -->
+
 ## Responses and errors
 
 `client.query(...)` and `client.discover(...)` return `JqlQueryResponse` with exactly:
@@ -247,15 +283,18 @@ Errors use `JudgevalAPIError` from `judgeval`. Its public structured properties 
 ```typescript
 import { JudgevalAPIError } from "judgeval";
 
+const execute = () => client.query(query);
+let result: Awaited<ReturnType<typeof execute>>;
+
 try {
-  const result = await client.query(query);
+  result = await execute();
 } catch (error) {
   if (error instanceof JudgevalAPIError) {
-    if (error.retryAfterSeconds !== undefined) {
+    if (error.retryAfterSeconds != null) {
       await new Promise((resolve) =>
-        setTimeout(resolve, error.retryAfterSeconds! * 1000),
+        setTimeout(resolve, error.retryAfterSeconds * 1000),
       );
-      const result = await client.query(query);
+      result = await execute();
     } else {
       throw new Error(
         `JQL request failed: code=${error.code}; hint=${error.hint}`,
