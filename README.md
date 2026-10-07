@@ -1,12 +1,12 @@
 # Judgment Skills
 
-[Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants how to work with [Judgment](https://judgmentlabs.ai) for tracing, evaluations, code judges, datasets, MCP server workflows, and agent performance workflows.
+[Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants how to work with [Judgment](https://judgmentlabs.ai) for tracing, evaluations, Code judges, datasets, MCP server workflows, and agent performance workflows.
 
 ## Skills
 
 | Skill                                                           | Description                                                                                                                                       |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [judgment](./skills/judgment)                                   | Main skill for adding Judgment tracing and evaluations, choosing scorer patterns, using code judges, and following Judgment SDK best practices.   |
+| [judgment](./skills/judgment)                                   | Main skill for adding Judgment tracing and evaluations, choosing scorer patterns, using Code judges, and following Judgment SDK best practices.   |
 | [mcp-server-best-practices](./skills/mcp-server-best-practices) | Standalone skill for using the Judgment MCP server effectively, including full-text trace search, batched queries, and production data workflows. |
 | [judgeval-jql](./skills/judgeval-jql)                           | Query and analyze project traces, spans, and sessions with tenant-safe JQL, including aggregations, pipelines, presentations, and discovery.      |
 
@@ -108,7 +108,7 @@ Once installed, your agent can use these skills when you ask it to:
 - Add Judgment tracing to an agent or workflow
 - Test model, prompt, tool, or agent config changes with OfflineTracer before production
 - Evaluate agent outputs with Judgment
-- Create or debug Python code judges
+- Create or debug Python Code judges
 - Choose scorer patterns for offline and hosted evaluations
 - Use the Judgment MCP server for production traces, labels, prompts, automations, agent memory, and agent threads
 - Query project traces, spans, and sessions with tenant-safe Judgeval JQL
