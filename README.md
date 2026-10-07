@@ -110,6 +110,6 @@ Once installed, your agent can use these skills when you ask it to:
 - Evaluate agent outputs with Judgment
 - Create or debug Python code judges
 - Choose scorer patterns for offline and hosted evaluations
-- Use the Judgment MCP server for production traces, behaviors, prompts, automations, agent memory, and agent threads
+- Use the Judgment MCP server for production traces, labels, prompts, automations, agent memory, and agent threads
 - Query project traces, spans, and sessions with tenant-safe Judgeval JQL
 - Look up current Judgment docs and SDK reference pages
