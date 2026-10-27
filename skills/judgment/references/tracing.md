@@ -103,14 +103,16 @@ so the agent can check traces directly, then use the UI for human review.
 **Preferred: MCP verification**
 
 - Use `list_projects` if the project ID or name is unclear.
-- Use `search_traces` to find the newest trace, or search by the test input,
-  session ID, customer ID, tag, route, or feature.
-- Use `get_trace_detail` to check project, session, duration, cost, and basic
+- Call `discover_schema` once, then use `sql_query` for every trace check
+  below.
+- Query `telemetry.traces` to find the newest trace, or filter by session ID,
+  customer ID, or trace name, and to check session, duration, status, and basic
   trace metadata.
-- Use `get_trace_spans` to inspect the root span, `llm` spans, `tool` spans,
-  inputs, outputs, model metadata, token usage, errors, attributes, and nesting.
-- Use `search_sessions`, `get_session_detail`, or `get_session_trace_ids` to
-  verify `session_id` grouping.
+- Query `telemetry.spans` for the trace ID to inspect the root span, `llm`
+  spans, `tool` spans, inputs, outputs, model metadata, cost, token usage,
+  errors, attributes, and nesting.
+- Query `telemetry.traces` grouped by `session_id` to verify `session_id`
+  grouping.
 
 **Fallback: CLI verification**
 
